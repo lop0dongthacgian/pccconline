@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiến thức phòng cháy, chữa cháy - Người chơi</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        }
+        .btn-ready {
+            background-color: #4CAF50;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+            animation: pulse-ready 1.5s infinite;
+        }
+        .btn-ready:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 1);
+        }
+        .btn-ready.ready {
+            animation: none;
+            background-color: #006400;
+            opacity: 0.8;
+            box-shadow: none;
+        }
+        .btn-start {
+            background-color: #2196F3;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.6);
+        }
+        .btn-start.active {
+            animation: pulse-start 0.8s infinite;
+            box-shadow: 0 0 20px rgba(33, 150, 243, 0.9);
+        }
+        .btn-start:hover {
+            background-color: #0b7dda;
+            transform: scale(1.05);
+        }
+        .btn-disable {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+            animation: none !important;
+            box-shadow: none !important;
+        }
+        .btn-logout {
+            background-color: #f44336;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px rgba(244, 67, 54, 0.5);
+        }
+        .btn-logout:hover {
+            background-color: #d32f2f;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(244, 67, 54, 0.8);
+        }
+        @keyframes pulse-ready {
+            0% { 
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7), 
+                            0 0 0 0 rgba(255, 100, 100, 0.4); 
+            }
+            50% { 
+                box-shadow: 0 0 0 15px rgba(76, 175, 80, 0), 
+                            0 0 0 10px rgba(255, 100, 100, 0); 
+            }
+            100% { 
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0), 
+                            0 0 0 0 rgba(255, 100, 100, 0); 
+            }
+        }
+        @keyframes pulse-start {
+            0% { 
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7),
+                            0 0 0 0 rgba(255, 100, 100, 0.5); 
+            }
+            70% { 
+                box-shadow: 0 0 0 20px rgba(33, 150, 243, 0),
+                            0 0 0 15px rgba(255, 100, 100, 0); 
+            }
+            100% { 
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0),
+                            0 0 0 0 rgba(255, 100, 100, 0); 
+            }
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
+            transform: translateY(-3px);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-box {
+            background: rgba(255, 255, 255, 0.97);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+            border-radius: 16px;
+            transition: all 0.4s ease;
+        }
+        .login-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.35);
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        .error-message {
+            color: #ff4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white flex items-center justify-center p-4">
+    <div id="login-screen" class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex justify-center items-center p-4">
+        <div class="w-full max-w-md login-box p-8 text-gray-800 animate-fade-in">
+            <div class="text-center mb-8">
+                <img src="img/chao.gif" alt="Colorful quiz game logo" class="mx-auto mb-4 rounded-full shadow-md border-4 border-purple-500">
+                <h1 class="text-3xl font-extrabold text-gray-900">Kiến thức phòng cháy, chữa cháy</h1>
+                <p class="text-gray-600 mt-2">Đăng nhập người chơi</p>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="player-name" class="block text-sm font-medium text-gray-700 mb-1">Tên Người chơi</label>
+                    <input type="text" id="player-name" placeholder="Tên và chữ lót của bạn (vd: Lệ Thu)" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu (1234567 + ID người chơi)</label>
+                    <input type="password" id="password" placeholder="Ví dụ: 12345671 cho ID 1" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900">
+                    <div id="password-error" class="error-message hidden"></div>
+                </div>
+                <button type="submit" 
+                    class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-md hover:from-blue-700 hover:to-purple-700 transition duration-300 font-semibold shadow-lg transform hover:scale-105">
+                    Đăng nhập
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="waiting-room" class="hidden w-full max-w-2xl card rounded-xl shadow-2xl p-6 animate-fade-in">
+        <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-700">
+            <div>
+                <h1 class="text-3xl font-bold glow-text"><span id="player-display-name"></span></h1>
+                <p class="text-gray-300 mt-1">ID Thiết bị: <span id="player-display-id"></span></p>
+            </div>
+            <button id="logout-btn" class="btn-logout text-white py-2 px-4 rounded-lg text-sm font-medium shadow-md hover:shadow-lg">
+                <i class="fas fa-sign-out-alt mr-2"></i> Đăng xuất
+            </button>
+        </div>
+        <div class="text-center p-6 bg-white bg-opacity-5 rounded-lg shadow-inner">
+            <img src="img/chao.gif" alt="Colorful quiz game logo" class="mx-auto mb-4 rounded-full shadow-md border-4 border-purple-500">
+            <h2 class="text-3xl font-bold text-white mb-4 glow-text">Đang chờ Game bắt đầu</h2>
+            <p class="text-gray-200 mb-8 text-lg">Vui lòng đợi người điều khiển game bắt đầu cuộc thi.</p>
+            <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-6">
+                <button id="ready-btn" class="btn-ready text-white py-3 px-8 rounded-lg text-lg font-medium hover:shadow-lg">
+                    Tôi đã sẵn sàng!
+                </button>
+                <button id="start-game-btn" class="btn-start text-white py-3 px-8 rounded-lg text-lg font-medium shadow-md hover:shadow-lg btn-disable">
+                    Bắt đầu Game
+                </button>
+            </div>
+            <div class="mt-10 p-4 bg-white bg-opacity-5 rounded-lg text-left">
+                <h3 class="text-xl font-semibold mb-4 text-white glow-text">Hướng dẫn Game</h3>
+                <ul class="max-w-md mx-auto space-y-2 text-gray-200">
+                    <li class="flex items-center">
+                        <span class="bg-green-500 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs font-bold mr-2"><i class="fas fa-check"></i></span>
+                        Đợi người điều khiển bắt đầu game
+                    </li>
+                    <li class="flex items-center">
+                        <span class="bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs font-bold mr-2"><i class="fas fa-hand-pointer"></i></span>
+                        Nhấn "Tôi đã sẵn sàng" khi bạn chuẩn bị xong
+                    </li>
+                    <li class="flex items-center">
+                        <span class="bg-yellow-500 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs font-bold mr-2"><i class="fas fa-gamepad"></i></span>
+                        Game sẽ tự động bắt đầu khi người điều khiển ra hiệu
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCScLtlbGJVhiPjhaRZbwjUWymysGWi-ok",
+    authDomain: "appwechat.firebaseapp.com",
+    projectId: "appwechat",
+    storageBucket: "appwechat.firebasestorage.app",
+    messagingSenderId: "384123549029",
+    appId: "1:384123549029:web:afc2cfb2560db74b0ddd8c",
+    measurementId: "G-B2C97WEMVZ"
+  };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const loginScreen = document.getElementById('login-screen');
+        const waitingRoom = document.getElementById('waiting-room');
+        const loginForm = document.getElementById('login-form');
+        const logoutBtn = document.getElementById('logout-btn');
+        const readyBtn = document.getElementById('ready-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const playerNameInput = document.getElementById('player-name');
+        const passwordInput = document.getElementById('password');
+        const passwordError = document.getElementById('password-error');
+        const playerDisplayName = document.getElementById('player-display-name');
+        const playerDisplayId = document.getElementById('player-display-id');
+        const gameRef = database.ref('game');
+        const clientsRef = database.ref('clients');
+        let clientRef;
+        let onlineStatusInterval;
+        let onDisconnectHandler;
+        let clientDeviceId;
+        let clientPlayerName;
+        let isReady = false;
+        let isGameStarted = false;
+        let wakeLock = null;
+
+        // Hàm giữ màn hình luôn sáng
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Màn hình luôn bật');
+                    
+                    document.addEventListener('visibilitychange', async () => {
+                        if (document.visibilityState === 'visible' && wakeLock !== null) {
+                            await wakeLock.renew();
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Không thể kích hoạt Wake Lock:', err);
+            }
+        }
+
+        function maintainWakeLock() {
+            setInterval(async () => {
+                if (wakeLock !== null && document.visibilityState === 'visible') {
+                    try {
+                        await wakeLock.renew();
+                    } catch (err) {
+                        console.error('Lỗi renew wake lock:', err);
+                        wakeLock = null;
+                        await requestWakeLock();
+                    }
+                }
+            }, 5000);
+        }
+
+        function showError(message, element = null) {
+            if (element) {
+                element.textContent = message;
+                element.classList.remove('hidden');
+                setTimeout(() => {
+                    element.classList.add('hidden');
+                }, 5000);
+            } else {
+                alert(message);
+            }
+            console.error(message);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await requestWakeLock();
+            maintainWakeLock();
+            
+            // Kiểm tra đăng nhập từ localStorage
+            const storedDeviceId = localStorage.getItem('clientDeviceId');
+            const storedPlayerName = localStorage.getItem('clientPlayerName');
+            if (storedDeviceId && storedPlayerName) {
+                clientRef = clientsRef.child(storedDeviceId); 
+                clientRef.once('value')
+                    .then(snapshot => {
+                        const clientData = snapshot.val();
+                        if (clientData && clientData.playerName === storedPlayerName) {
+                            // Nếu thiết bị đang online bởi người khác
+                            if (clientData.online && clientData.lastSeen > Date.now() - 15000) {
+                                showError(`Thiết bị ${storedDeviceId} đang được sử dụng. Không thể khôi phục phiên.`);
+                                localStorage.removeItem('clientDeviceId');
+                                localStorage.removeItem('clientPlayerName');
+                                return;
+                            }
+                            
+                            clientDeviceId = storedDeviceId;
+                            clientPlayerName = storedPlayerName;
+                            loginScreen.classList.add('hidden');
+                            waitingRoom.classList.remove('hidden');
+                            playerDisplayName.textContent = clientPlayerName;
+                            playerDisplayId.textContent = clientDeviceId;
+                            initializeClient();
+                            console.log(`Phiên client ${clientDeviceId} được khôi phục.`);
+                        } else {
+                            console.log("Dữ liệu client đã lưu không hợp lệ hoặc không tìm thấy, yêu cầu đăng nhập lại.");
+                            localStorage.removeItem('clientDeviceId');
+                            localStorage.removeItem('clientPlayerName');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Lỗi khi khôi phục phiên:", error);
+                    });
+            }
+            startGameBtn.classList.add('btn-disable'); 
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clientPlayerName = playerNameInput.value.trim();
+            const enteredPassword = passwordInput.value.trim();
+            
+            // Kiểm tra mật khẩu có đúng định dạng "1234567" + số ID không
+            if (!enteredPassword.startsWith('1234567') || enteredPassword.length < 8 || isNaN(enteredPassword.substring(7))) {
+                showError('Mật khẩu không đúng. Vui lòng nhập "1234567" + ID thiết bị của bạn (ví dụ: 12345671 cho ID 1)', passwordError);
+                return;
+            }
+            
+            clientDeviceId = enteredPassword.substring(7);
+            
+            try {
+                const settingsSnapshot = await database.ref('settings').once('value');
+                const maxClients = settingsSnapshot.val()?.maxClients || 99;
+
+                if (parseInt(clientDeviceId) > maxClients) {
+                    showError(`ID máy vượt quá giới hạn cho phép (${maxClients}). Vui lòng sử dụng ID từ 1 đến ${maxClients}.`, passwordError);
+                    return;
+                }
+
+                // Kiểm tra xem thiết bị đã online chưa
+                const snapshot = await clientsRef.child(clientDeviceId).once('value');
+                const clientData = snapshot.val();
+                
+                if (clientData) {
+                    // Nếu thiết bị đang online (trong vòng 15s gần nhất)
+                    if (clientData.online && clientData.lastSeen > Date.now() - 15000) {
+                        // Và không phải là phiên đăng nhập trước đó
+                        if (!(localStorage.getItem('clientDeviceId') === clientDeviceId && 
+                            localStorage.getItem('clientPlayerName') === clientPlayerName)) {
+                            showError(`Thiết bị ${clientDeviceId} đang được sử dụng. Không thể đăng nhập trùng.`, passwordError);
+                            return;
+                        }
+                    }
+                    
+                    // Nếu thiết bị đã có người đăng ký tên khác
+                    if (clientData.playerName && clientData.playerName !== clientPlayerName) {
+                        showError(`Thiết bị ${clientDeviceId} đã được đăng ký bởi người chơi khác.`, passwordError);
+                        return;
+                    }
+                }
+
+                // Cho phép đăng nhập
+                loginScreen.classList.add('hidden');
+                waitingRoom.classList.remove('hidden');
+                playerDisplayName.textContent = clientPlayerName;
+                playerDisplayId.textContent = clientDeviceId;
+                initializeClient();
+            } catch (error) {
+                showError('Lỗi kết nối máy chủ: ' + error.message, passwordError);
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            if (clientRef) {
+                clientRef.update({
+                    online: false,
+                    ready: false,
+                    lastSeen: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    if (onDisconnectHandler) onDisconnectHandler.cancel();
+                    if (onlineStatusInterval) clearInterval(onlineStatusInterval);
+                    localStorage.removeItem('clientDeviceId');
+                    localStorage.removeItem('clientPlayerName');
+                    waitingRoom.classList.add('hidden');
+                    loginScreen.classList.remove('hidden');
+                    playerNameInput.value = '';
+                    passwordInput.value = '';
+                }).catch(e => {
+                    console.error("Lỗi cập nhật trạng thái đăng xuất:", e);
+                    showError("Lỗi khi đăng xuất. Vui lòng thử lại.");
+                });
+            } else {
+                waitingRoom.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+                playerNameInput.value = '';
+                passwordInput.value = '';
+            }
+        });
+
+        function initializeClient() {
+            clientRef = clientsRef.child(clientDeviceId);
+            
+            // Sử dụng onDisconnect để tự động đặt online = false khi client mất kết nối
+            onDisconnectHandler = clientRef.onDisconnect();
+            onDisconnectHandler.update({
+                online: false,
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
+            });
+
+            // Cập nhật trạng thái online và lastSeen định kỳ (ping)
+            clientRef.update({
+                playerName: clientPlayerName,
+                online: true,
+                ready: false,
+                score: 0,
+                correct: 0,
+                wrong: 0,
+                likes: 0,
+                lastSeen: firebase.database.ServerValue.TIMESTAMP,
+            }).then(() => {
+                onlineStatusInterval = setInterval(() => {
+                    clientRef.update({ lastSeen: firebase.database.ServerValue.TIMESTAMP })
+                        .catch(e => console.log("Lỗi cập nhật trạng thái online định kỳ:", e));
+                }, 10000); // Gửi ping mỗi 10 giây
+                localStorage.setItem('clientDeviceId', clientDeviceId);
+                localStorage.setItem('clientPlayerName', clientPlayerName);
+            }).catch(e => {
+                console.error("Lỗi khi khởi tạo/cập nhật dữ liệu client:", e);
+                showError("Lỗi khi khởi tạo dữ liệu client: " + e.message + ". Vui lòng thử lại.");
+                loginScreen.classList.remove('hidden');
+                waitingRoom.classList.add('hidden');
+            });
+
+            readyBtn.addEventListener('click', () => {
+                if (!clientRef) return;
+                isReady = !isReady;
+                clientRef.update({ ready: isReady })
+                    .then(() => {
+                        readyBtn.textContent = isReady ? 'Sẵn sàng ✓' : 'Tôi đã sẵn sàng!';
+                        readyBtn.style.backgroundColor = isReady ? '#006400' : '#4CAF50';
+                        if (isReady) readyBtn.classList.add('ready');
+                        else readyBtn.classList.remove('ready');
+                    })
+                    .catch(e => {
+                        console.error("Lỗi cập nhật trạng thái Ready:", e);
+                        showError("Lỗi: Không thể cập nhật trạng thái sẵn sàng lên máy chủ.");
+                    });
+            });
+
+            startGameBtn.addEventListener('click', () => {
+                startGameBtn.classList.remove('active');
+                startGameBtn.classList.add('btn-disable');
+                window.open('game/game.html', '_blank');
+            });
+
+            gameRef.on('value', (snapshot) => {
+                const gameData = snapshot.val();
+                if (gameData && gameData.gameStarted) {
+                    isGameStarted = true;
+                    startGameBtn.classList.remove('btn-disable');
+                    startGameBtn.classList.add('active');
+                } else {
+                    isGameStarted = false;
+                    startGameBtn.classList.add('btn-disable');
+                    startGameBtn.classList.remove('active');
+                }
+            });
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (onDisconnectHandler) onDisconnectHandler.cancel();
+            if (onlineStatusInterval) clearInterval(onlineStatusInterval);
+            if (clientRef) {
+                clientRef.update({online: false, lastSeen: firebase.database.ServerValue.TIMESTAMP});
+            }
+        });
+    </script>
+</body>
+</html>
