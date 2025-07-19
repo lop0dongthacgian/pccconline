@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình chiếu theo dõi cuộc thi PCCC</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* === CORE STYLES === */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* === WAITING SCREEN === */
+        .waiting-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('img/nen.jpg') center/cover no-repeat;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .waiting-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .waiting-icon {
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 30px;
+            object-fit: contain;
+        }
+
+        .waiting-text {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ffeb3b;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .waiting-subtext {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .start-btn {
+            background: linear-gradient(to right, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        /* === MAIN CONTENT === */
+        #main-content {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #4a00e0, #8e2de2);
+            padding: 60px 20px 20px;
+            box-sizing: border-box; /* Đảm bảo padding không làm tràn ra ngoài */
+        }
+
+        .exit-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(to right, #f44336, #c62828);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 50;
+        }
+
+        .exit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        /* === HEADER STYLES === */
+        .header-container {
+            padding-top: 10px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #ffeb3b;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+        }
+
+        /* === TABLE STYLES === */
+        .players-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .players-table thead th {
+            background-color: #5a189a;
+            color: white;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.4rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .players-table tbody td {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 1.2rem;
+        }
+
+        .table-container {
+            max-height: 65vh;
+            overflow-y: auto;
+            margin-top: 15px;
+            border-radius: 12px;
+            position: relative; /* Để chứa nút fullscreen */
+        }
+
+        /* === STATS STYLES === */
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .online-value { color: #4CAF50; }
+        .offline-value { color: #f44336; }
+
+        /* === CLOCK STYLES === */
+        .clock {
+            font-size: 1.5rem;
+            margin-top: 10px;
+            font-family: monospace;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 5px 12px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        /* === RANKING STYLES === */
+        .ranking-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: white;
+        }
+
+        .rank-cell {
+            font-weight: bold;
+            color: #ffeb3b;
+        }
+
+        .score-cell {
+            font-weight: bold;
+        }
+
+        /* === WINNER STYLES === */
+        .winner-container {
+            display: none;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .winner-title {
+            font-size: 2.5rem;
+            color: #ffeb3b;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .winner-name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .winner-score {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* === TIME DISPLAY STYLES === */
+        .time-display {
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .time-completed {
+            color: #4CAF50;
+        }
+
+        /* === FULLSCREEN TABLE STYLES === */
+        .fullscreen-table-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #4a00e0, #8e2de2); /* Giữ màu nền */
+            z-index: 99; /* Cao hơn các thành phần khác nhưng thấp hơn waiting-screen và exit-btn */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .fullscreen-table-container .players-table {
+            width: 95%; /* Chiếm gần hết chiều rộng */
+            height: 90%; /* Chiếm gần hết chiều cao */
+            font-size: 1.5em; /* Phóng to chữ trong bảng */
+        }
+
+        .fullscreen-table-container .players-table thead th {
+            font-size: 1.8rem; /* Phóng to tiêu đề cột */
+            padding: 20px 25px;
+        }
+
+        .fullscreen-table-container .players-table tbody td {
+            font-size: 1.6rem; /* Phóng to nội dung ô */
+            padding: 15px 25px;
+        }
+
+        .fullscreen-table-container .table-container {
+            max-height: unset; /* Bỏ giới hạn chiều cao cũ */
+            overflow-y: auto; /* Cho phép cuộn nếu cần */
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Nút fullscreen */
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px; /* Đặt nút ở trên cùng */
+            right: 10px;  /* Đặt nút ở phải */
+            background-color: rgba(0, 0, 0, 0.4);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            z-index: 20; /* Đảm bảo nút nằm trên bảng */
+            transition: background-color 0.3s ease;
+        }
+
+        .fullscreen-btn:hover {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Khi ở chế độ toàn màn hình, nút phóng to/thu nhỏ sẽ di chuyển lên góc trên bên phải */
+        .fullscreen-table-container .fullscreen-btn {
+            top: 20px;
+            right: 20px;
+            font-size: 1.2rem;
+            padding: 10px 15px;
+        }
+
+        /* Ẩn các thành phần khác khi bảng ở chế độ toàn màn hình */
+        .fullscreen-active .header-container,
+        .fullscreen-active .winner-container,
+        .fullscreen-active .stats-container,
+        .fullscreen-active .ranking-title {
+            display: none;
+        }
+
+        .fullscreen-active #main-content {
+            padding: 0; /* Bỏ padding khi toàn màn hình */
+        }
+
+        .fullscreen-active .exit-btn {
+            z-index: 101; /* Đảm bảo nút thoát nằm trên mọi thứ */
+        }
+
+        /* Dot trạng thái */
+        .online-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            margin-right: 8px;
+        }
+
+        .offline-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #f44336;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="waiting-screen" class="waiting-screen">
+        <div class="waiting-overlay">
+            <img src="img/dongho.gif" alt="Đồng hồ đếm ngược" class="waiting-icon">
+            <h2 class="waiting-text">THEO DÕI CUỘC THI PCCC</h2>
+            <p class="waiting-subtext">Nhấn nút bên dưới để bắt đầu theo dõi cuộc thi</p>
+            <button id="start-btn" class="start-btn">
+                <i class="fas fa-play-circle mr-2"></i> BẮT ĐẦU THEO DÕI
+            </button>
+            <div class="clock" id="current-time"></div>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <button id="exit-btn" class="exit-btn">
+            <i class="fas fa-sign-out-alt mr-2"></i> THOÁT
+        </button>
+
+        <div class="w-full max-w-7xl mx-auto">
+            <div class="header-container">
+                <div class="header">
+                    <h1 class="title">CUỘC THI KIẾN THỨC PHÒNG CHÁY CHỮA CHÁY</h1>
+                    <p class="subtitle">Bảng theo dõi thời gian thực</p>
+                    <div class="clock" id="game-time"></div>
+                </div>
+            </div>
+
+            <div id="winner-container" class="winner-container">
+                <h2 class="winner-title">NGƯỜI CHIẾN THẮNG</h2>
+                <div class="winner-name" id="winner-name"></div>
+                <div class="winner-score" id="winner-score"></div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="stat-title">NGƯỜI CHƠI ONLINE</div>
+                    <div class="stat-value online-value" id="online-players">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">NGƯỜI CHƠI OFFLINE</div>
+                    <div class="stat-value offline-value" id="offline-players">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">CỔ ĐỘNG VIÊN ONLINE</div>
+                    <div class="stat-value online-value" id="online-fans">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">CỔ ĐỘNG VIÊN OFFLINE</div>
+                    <div class="stat-value offline-value" id="offline-fans">0</div>
+                </div>
+            </div>
+
+            <div id="live-ranking">
+                <h2 class="ranking-title">BẢNG XẾP HẠNG THEO THỜI GIAN THỰC</h2>
+                <div class="table-container" id="players-table-container">
+                    <button id="fullscreen-btn" class="fullscreen-btn" title="Phóng to bảng">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <table class="players-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>TÊN NGƯỜI CHƠI</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>ĐIỂM SỐ</th>
+                                <th>THỜI GIAN</th>
+                                <th>ĐÚNG</th>
+                                <th>SAI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="players-body">
+                            <tr>
+                                <td colspan="7" class="text-center py-10 text-gray-400">
+                                    <i class="fas fa-users text-4xl mb-4"></i>
+                                    <p class="text-xl">Đang tải dữ liệu...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cấu hình Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCScLtlbGJVhiPjhaRZbwjUWymysGWi-ok",
+    authDomain: "appwechat.firebaseapp.com",
+    projectId: "appwechat",
+    storageBucket: "appwechat.firebasestorage.app",
+    messagingSenderId: "384123549029",
+    appId: "1:384123549029:web:afc2cfb2560db74b0ddd8c",
+    measurementId: "G-B2C97WEMVZ"
+  };
+
+        // Biến toàn cục
+        let database;
+        let listeners = [];
+        let clockInterval;
+        let isFullscreen = false;
+
+        // Khởi tạo ứng dụng
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ẩn nội dung chính ban đầu
+            document.getElementById('main-content').style.display = 'none';
+
+            // Khởi động đồng hồ
+            updateClock();
+            clockInterval = setInterval(updateClock, 1000);
+
+            // Sự kiện nút bắt đầu
+            document.getElementById('start-btn').addEventListener('click', startMonitoring);
+
+            // Sự kiện nút thoát
+            document.getElementById('exit-btn').addEventListener('click', stopMonitoring);
+
+            // Sự kiện nút phóng to/thu nhỏ
+            document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+        });
+
+        // ===== CÁC HÀM CHÍNH =====
+        function startMonitoring() {
+            try {
+                console.log("Bắt đầu kết nối Firebase...");
+
+                // 1. Khởi tạo Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    database = firebase.database();
+                    console.log("Firebase đã được khởi tạo");
+                }
+
+                // 2. Chuyển đổi màn hình
+                document.getElementById('waiting-screen').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+
+                // 3. Thiết lập listeners
+                setupListeners();
+
+                console.log("Đã bắt đầu theo dõi dữ liệu");
+            } catch (error) {
+                console.error("Lỗi khi bắt đầu theo dõi:", error);
+                alert("Có lỗi xảy ra khi kết nối. Vui lòng thử lại!");
+            }
+        }
+
+        function stopMonitoring() {
+            try {
+                console.log("Đang dừng theo dõi...");
+
+                // 1. Hủy tất cả listeners
+                removeAllListeners();
+
+                // 2. Chuyển về màn hình chờ
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('waiting-screen').style.display = 'flex';
+                document.getElementById('winner-container').style.display = 'none';
+
+                // Đảm bảo thoát chế độ toàn màn hình nếu đang bật
+                if (isFullscreen) {
+                    toggleFullscreen();
+                }
+
+                console.log("Đã dừng theo dõi và giải phóng tài nguyên");
+            } catch (error) {
+                console.error("Lỗi khi dừng theo dõi:", error);
+            }
+        }
+
+        function setupListeners() {
+            try {
+                console.log("Thiết lập listeners...");
+
+                // Tham chiếu đến các node cần theo dõi
+                const fansRef = database.ref('fans');
+                const clientsRef = database.ref('clients');
+                const gameRef = database.ref('game');
+
+                // Lắng nghe dữ liệu
+                fansRef.on('value', updateFansCount);
+                clientsRef.on('value', updatePlayersData);
+                gameRef.on('value', handleGameStatus);
+
+                // Lưu các reference để quản lý
+                listeners = [fansRef, clientsRef, gameRef];
+
+                console.log("Đã thiết lập xong listeners");
+            } catch (error) {
+                console.error("Lỗi khi thiết lập listeners:", error);
+            }
+        }
+
+        function removeAllListeners() {
+            try {
+                console.log("Đang xóa listeners...");
+
+                listeners.forEach(ref => {
+                    if (ref && typeof ref.off === 'function') {
+                        ref.off();
+                    }
+                });
+                listeners = [];
+
+                console.log("Đã xóa tất cả listeners");
+            } catch (error) {
+                console.error("Lỗi khi xóa listeners:", error);
+            }
+        }
+
+        // ===== CÁC HÀM XỬ LÝ DỮ LIỆU =====
+        function updateFansCount(snapshot) {
+            try {
+                const fans = snapshot.val() || {};
+                let online = 0, offline = 0;
+
+                Object.values(fans).forEach(fan => {
+                    if (fan && typeof fan.online !== 'undefined') {
+                        fan.online ? online++ : offline++;
+                    }
+                });
+
+                document.getElementById('online-fans').textContent = online;
+                document.getElementById('offline-fans').textContent = offline;
+
+                console.log(`Cập nhật fans: Online ${online}, Offline ${offline}`);
+            } catch (error) {
+                console.error("Lỗi khi cập nhật số lượng fans:", error);
+            }
+        }
+
+        function updatePlayersData(snapshot) {
+            try {
+                const players = snapshot.val() || {};
+                const playersBody = document.getElementById('players-body');
+
+                console.log(`Nhận dữ liệu từ ${Object.keys(players).length} người chơi`);
+
+                // Sắp xếp người chơi theo điểm số
+                const sortedPlayers = Object.entries(players)
+                    .map(([id, data]) => ({ id, ...data }))
+                    .sort((a, b) => {
+                        const scoreA = a.gameData?.score || 0;
+                        const scoreB = b.gameData?.score || 0;
+
+                        // Sắp xếp giảm dần theo điểm
+                        if (scoreA !== scoreB) {
+                            return scoreB - scoreA;
+                        }
+                        // Nếu điểm bằng nhau, sắp xếp tăng dần theo thời gian hoàn thành
+                        const timeA = a.gameData?.completionTime !== undefined && a.gameData?.completionTime !== null ? a.gameData.completionTime : Infinity;
+                        const timeB = b.gameData?.completionTime !== undefined && b.gameData?.completionTime !== null ? b.gameData.completionTime : Infinity;
+                        return timeA - timeB;
+                    });
+
+                // Cập nhật bảng
+                playersBody.innerHTML = '';
+
+                if (sortedPlayers.length === 0) {
+                    playersBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-10 text-gray-400">
+                                <i class="fas fa-users text-4xl mb-4"></i>
+                                <p class="text-xl">Chưa có người chơi nào kết nối</p>
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                let onlinePlayers = 0;
+                let offlinePlayers = 0;
+
+                sortedPlayers.forEach((player, index) => {
+                    if (player.online) {
+                        onlinePlayers++;
+                    } else {
+                        offlinePlayers++;
+                    }
+
+                    // Xử lý hiển thị thời gian hoàn thành
+                    let completionTime = '--';
+                    let timeClass = '';
+
+                    if (player.gameData) {
+                        if (player.gameData.completionTime !== undefined && player.gameData.completionTime !== null) {
+                            const mins = Math.floor(player.gameData.completionTime / 60);
+                            const secs = player.gameData.completionTime % 60;
+                            completionTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                            timeClass = 'time-completed';
+                        } else if (player.gameData.finished) {
+                            completionTime = "Hoàn thành";
+                            timeClass = 'time-completed';
+                        }
+                    }
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="rank-cell">${index + 1}</td>
+                        <td>${player.playerName || 'Người chơi'}</td>
+                        <td>${player.online ? '<span class="online-dot"></span> Online' : '<span class="offline-dot"></span> Offline'}</td>
+                        <td class="score-cell">${player.gameData?.score || 0}</td>
+                        <td class="time-display ${timeClass}">${completionTime}</td>
+                        <td>${player.gameData?.correctAnswers || 0}</td>
+                        <td>${player.gameData?.incorrectAnswers || 0}</td>
+                    `;
+
+                    playersBody.appendChild(row);
+                });
+
+                document.getElementById('online-players').textContent = onlinePlayers;
+                document.getElementById('offline-players').textContent = offlinePlayers;
+
+            } catch (error) {
+                console.error("Lỗi khi cập nhật dữ liệu người chơi:", error);
+            }
+        }
+
+        function handleGameStatus(snapshot) {
+            try {
+                const gameData = snapshot.val() || {};
+                console.log("Trạng thái game được cập nhật:", gameData);
+
+                const winnerContainer = document.getElementById('winner-container');
+
+                // Xử lý khi game kết thúc
+                if (gameData.gameEnded) {
+                    console.log("Game đã kết thúc");
+
+                    // Lấy danh sách người chơi để xác định người chiến thắng
+                    database.ref('clients').once('value').then(playersSnapshot => {
+                        const players = playersSnapshot.val() || {};
+                        const sortedPlayers = Object.entries(players)
+                            .map(([id, data]) => ({ id, ...data }))
+                            .sort((a, b) => {
+                                const scoreA = a.gameData?.score || 0;
+                                const scoreB = b.gameData?.score || 0;
+                                if (scoreA !== scoreB) {
+                                    return scoreB - scoreA;
+                                }
+                                const timeA = a.gameData?.completionTime !== undefined && a.gameData?.completionTime !== null ? a.gameData.completionTime : Infinity;
+                                const timeB = b.gameData?.completionTime !== undefined && b.gameData?.completionTime !== null ? b.gameData.completionTime : Infinity;
+                                return timeA - timeB;
+                            });
+
+                        if (sortedPlayers.length > 0) {
+                            const winner = sortedPlayers[0];
+                            showWinner(winner.playerName || 'Người chơi', winner.gameData?.score || 0);
+                        }
+                    });
+                } else {
+                    winnerContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Lỗi khi xử lý trạng thái game:", error);
+            }
+        }
+
+        function showWinner(name, score) {
+            const winnerContainer = document.getElementById('winner-container');
+            document.getElementById('winner-name').textContent = name;
+            document.getElementById('winner-score').textContent = `Điểm số: ${score}`;
+            winnerContainer.style.display = 'block';
+
+            console.log(`Hiển thị người chiến thắng: ${name} với ${score} điểm`);
+        }
+
+        // ===== TIỆN ÍCH =====
+        function updateClock() {
+            try {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const dateStr = now.toLocaleDateString('vi-VN', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+
+                document.getElementById('current-time').textContent = `${dateStr} - ${timeStr}`;
+
+                const gameTimeEl = document.getElementById('game-time');
+                if (gameTimeEl) {
+                    gameTimeEl.textContent = `${dateStr} - ${timeStr}`;
+                }
+            } catch (error) {
+                console.error("Lỗi khi cập nhật đồng hồ:", error);
+            }
+        }
+
+        function toggleFullscreen() {
+            const tableContainer = document.getElementById('players-table-container');
+            const mainContent = document.getElementById('main-content');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+            if (!isFullscreen) {
+                // Chuyển sang chế độ toàn màn hình
+                tableContainer.classList.add('fullscreen-table-container');
+                mainContent.classList.add('fullscreen-active');
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>'; // Đổi icon thu nhỏ
+                fullscreenBtn.title = 'Thu nhỏ';
+            } else {
+                // Thoát chế độ toàn màn hình
+                tableContainer.classList.remove('fullscreen-table-container');
+                mainContent.classList.remove('fullscreen-active');
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>'; // Đổi icon phóng to
+                fullscreenBtn.title = 'Phóng to';
+            }
+            isFullscreen = !isFullscreen;
+            console.log("Chế độ toàn màn hình:", isFullscreen);
+        }
+
+        // Dọn dẹp khi đóng trang
+        window.addEventListener('beforeunload', function() {
+            clearInterval(clockInterval);
+            removeAllListeners();
+        });
+    </script>
+</body>
+</html>
