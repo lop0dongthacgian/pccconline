@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiến thức phòng cháy, chữa cháy - Bảng cổ động viên</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+        }
+        .online-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .offline-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #f44336;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .fan-stats {
+            background-color: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .fan-stat-item {
+            padding: 0 15px;
+        }
+        .fan-stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffeb3b;
+        }
+        .fan-stat-label {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        .login-container {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .players-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .players-table thead th {
+            background-color: #5a189a;
+            color: white;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .players-table tbody td {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .players-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .players-table tbody tr:hover {
+            background-color: rgba(255,255,255,0.15);
+        }
+        .table-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            margin-top: 20px;
+            border-radius: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.3) transparent;
+        }
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+        .rank-cell {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #ffeb3b;
+        }
+        .score-cell {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            width: 48%;
+            text-align: center;
+        }
+        .stat-title {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .online-value {
+            color: #4CAF50;
+        }
+        .offline-value {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 to-purple-900 min-h-screen text-white p-4">
+    <div id="login-screen" class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex justify-center items-center p-4">
+        <div class="w-full max-w-md bg-white rounded-lg shadow-2xl p-8 text-gray-800 login-container">
+            <div class="text-center mb-8">
+                <img src="img/chao.gif" alt="Colorful quiz game logo" class="mx-auto mb-4 rounded-full shadow-md border-4 border-purple-500 w-32 h-32 object-cover">
+                <h1 class="text-3xl font-extrabold text-gray-900">Kiến thức phòng cháy, chữa cháy</h1>
+                <p class="text-gray-600 mt-2">Đăng nhập cổ động viên</p>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="fan-name-input" class="block text-sm font-medium text-gray-700 mb-1">Tên của bạn</label>
+                    <input type="text" id="fan-name-input" required placeholder="Nhập tên của bạn"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900">
+                </div>
+                <div>
+                    <label for="fan-password-input" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                    <input type="password" id="fan-password-input" placeholder="Nhập mật khẩu" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900">
+                </div>
+                <button type="submit" 
+                    class="w-full bg-purple-700 text-white py-3 px-4 rounded-md hover:bg-purple-800 transition duration-300 font-semibold shadow-lg pulse">
+                    Đăng nhập
+                </button>
+            </form>
+        </div>
+    </div>
+    <div id="fan-panel" class="hidden w-full max-w-6xl mx-auto bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-xl shadow-2xl p-6 text-white border border-gray-700">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-4xl font-bold">Cổ động viên: <span id="fan-display-name" class="text-yellow-300"></span></h1>
+                <p class="text-gray-300 mt-1">Theo dõi và cổ vũ người chơi</p>
+            </div>
+            <button id="logout-btn" class="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 transition duration-300 shadow-md text-lg">
+                <i class="fas fa-sign-out-alt mr-2"></i> Thoát
+            </button>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-title">Cổ động viên Online</div>
+                <div class="stat-value online-value" id="online-fans">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Cổ động viên Offline</div>
+                <div class="stat-value offline-value" id="offline-fans">0</div>
+            </div>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-title">Người chơi Online</div>
+                <div class="stat-value online-value" id="online-players">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Người chơi Offline</div>
+                <div class="stat-value offline-value" id="offline-players">0</div>
+            </div>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-3xl font-bold text-center mb-6 text-white">Bảng xếp hạng người chơi</h2>
+            <div class="table-container">
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Tên người chơi</th>
+                            <th>Trạng thái</th>
+                            <th>Điểm số</th>
+                            <th>Đúng</th>
+                            <th>Sai</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players-table-body">
+                        <tr>
+                            <td colspan="6" class="text-center py-8 text-gray-400">
+                                <i class="fas fa-users text-4xl mb-4"></i>
+                                <p>Chưa có người chơi nào kết nối</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCScLtlbGJVhiPjhaRZbwjUWymysGWi-ok",
+    authDomain: "appwechat.firebaseapp.com",
+    projectId: "appwechat",
+    storageBucket: "appwechat.firebasestorage.app",
+    messagingSenderId: "384123549029",
+    appId: "1:384123549029:web:afc2cfb2560db74b0ddd8c",
+    measurementId: "G-B2C97WEMVZ"
+  };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const loginScreen = document.getElementById('login-screen');
+        const fanPanel = document.getElementById('fan-panel');
+        const loginForm = document.getElementById('login-form');
+        const logoutBtn = document.getElementById('logout-btn');
+        const fanNameInput = document.getElementById('fan-name-input');
+        const fanPasswordInput = document.getElementById('fan-password-input');
+        const fanDisplayName = document.getElementById('fan-display-name');
+        const onlinePlayersEl = document.getElementById('online-players');
+        const offlinePlayersEl = document.getElementById('offline-players');
+        const onlineFansEl = document.getElementById('online-fans');
+        const offlineFansEl = document.getElementById('offline-fans');
+        const playersTableBody = document.getElementById('players-table-body');
+
+        let currentFanId = null;
+        let wakeLock = null;
+        let fanActivityInterval = null;
+
+        // Giữ màn hình luôn sáng
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Màn hình được giữ sáng.');
+                } else {
+                    alert("Thiết bị không hỗ trợ Wake Lock API.");
+                }
+            } catch (err) {
+                console.error('Không thể kích hoạt Wake Lock:', err);
+            }
+        }
+
+        // Cập nhật trạng thái hoạt động của cổ động viên
+        function updateFanActivity() {
+            if (currentFanId) {
+                firebase.database().ref(`fans/${currentFanId}`).update({
+                    lastActive: firebase.database.ServerValue.TIMESTAMP,
+                    online: true
+                });
+            }
+        }
+
+        // Đánh dấu cổ động viên là offline
+        function setFanOffline() {
+            if (currentFanId) {
+                firebase.database().ref(`fans/${currentFanId}`).update({
+                    online: false,
+                    lastActive: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    currentFanId = null;
+                });
+            }
+        }
+
+        // Khôi phục trạng thái đăng nhập từ localStorage
+        const savedFanData = JSON.parse(localStorage.getItem('fanData'));
+        if (savedFanData && savedFanData.id && savedFanData.name) {
+            currentFanId = savedFanData.id;
+            fanDisplayName.textContent = savedFanData.name;
+            loginScreen.classList.add('hidden');
+            fanPanel.classList.remove('hidden');
+            initializeFanPanel();
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const enteredFanName = fanNameInput.value.trim();
+            const enteredPassword = fanPasswordInput.value;
+            if (!enteredFanName) {
+                alert('Vui lòng nhập tên của bạn');
+                return;
+            }
+
+            // Tạo ID duy nhất cho cổ động viên
+            currentFanId = 'fan_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('fanData', JSON.stringify({ id: currentFanId, name: enteredFanName }));
+
+            // Đăng ký cổ động viên trên Firebase
+            firebase.database().ref(`fans/${currentFanId}`).set({
+                name: enteredFanName,
+                online: true,
+                lastActive: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                loginScreen.classList.add('hidden');
+                fanPanel.classList.remove('hidden');
+                fanDisplayName.textContent = enteredFanName;
+                
+                // Bắt đầu cập nhật hoạt động định kỳ
+                fanActivityInterval = setInterval(updateFanActivity, 30000); // 30 giây
+                updateFanActivity(); // Cập nhật ngay lần đầu
+                
+                initializeFanPanel();
+                requestWakeLock();
+            });
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            // Dừng cập nhật hoạt động
+            if (fanActivityInterval) {
+                clearInterval(fanActivityInterval);
+                fanActivityInterval = null;
+            }
+            
+            setFanOffline();
+            
+            fanPanel.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            fanNameInput.value = '';
+            fanPasswordInput.value = '';
+            localStorage.removeItem('fanData');
+        });
+
+        function initializeFanPanel() {
+            // Theo dõi số lượng cổ động viên online/offline
+            firebase.database().ref('fans').on('value', snap => {
+                const fans = snap.val();
+                let onlineCount = 0;
+                let offlineCount = 0;
+                
+                if (fans) {
+                    Object.values(fans).forEach(fan => {
+                        if (fan.online) {
+                            onlineCount++;
+                        } else {
+                            offlineCount++;
+                        }
+                    });
+                }
+                
+                onlineFansEl.textContent = onlineCount;
+                offlineFansEl.textContent = offlineCount;
+            });
+
+            // Theo dõi số lượng người chơi online/offline
+            firebase.database().ref('clients').on('value', snap => {
+                const clients = snap.val();
+                let onlineCount = 0;
+                let offlineCount = 0;
+                
+                if (clients) {
+                    Object.values(clients).forEach(client => {
+                        if (client.online) {
+                            onlineCount++;
+                        } else {
+                            offlineCount++;
+                        }
+                    });
+                }
+                
+                onlinePlayersEl.textContent = onlineCount;
+                offlinePlayersEl.textContent = offlineCount;
+            });
+
+            // Hiển thị bảng xếp hạng
+            firebase.database().ref('clients').on('value', snap => {
+                const clients = snap.val();
+                playersTableBody.innerHTML = '';
+                if (clients) {
+                    const sorted = Object.entries(clients)
+                        .map(([id, data]) => ({ id, ...data }))
+                        .sort((a, b) => {
+                            const scoreA = a.gameData?.score ?? 0;
+                            const scoreB = b.gameData?.score ?? 0;
+                            return scoreB - scoreA;
+                        });
+
+                    sorted.forEach((player, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="rank-cell">${index + 1}</td>
+                            <td class="font-semibold">${player.playerName || 'Người chơi'}</td>
+                            <td>${player.online ? '<span class="online-dot"></span> Online' : '<span class="offline-dot"></span> Offline'}</td>
+                            <td class="score-cell">${player.gameData?.score ?? 0}</td>
+                            <td class="text-green-400">${player.gameData?.correctAnswers ?? 0}</td>
+                            <td class="text-red-400">${player.gameData?.incorrectAnswers ?? 0}</td>
+                        `;
+                        playersTableBody.appendChild(row);
+                    });
+                } else {
+                    playersTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-8 text-gray-400">
+                                <i class="fas fa-users text-4xl mb-4"></i>
+                                <p>Chưa có người chơi nào kết nối</p>
+                            </td>
+                        </tr>`;
+                }
+            });
+        }
+
+        // Xử lý khi đóng trình duyệt hoặc refresh trang
+        window.addEventListener('beforeunload', () => {
+            setFanOffline();
+        });
+
+        // Kiểm tra khi trang được tải lại (phòng trường hợp beforeunload không hoạt động)
+        window.addEventListener('load', () => {
+            // Xóa các cổ động viên không hoạt động trong 1 phút
+            const oneMinuteAgo = Date.now() - 60000;
+            firebase.database().ref('fans').orderByChild('lastActive').endAt(oneMinuteAgo)
+                .once('value', snap => {
+                    const updates = {};
+                    snap.forEach(child => {
+                        if (child.val().online) {
+                            updates[`${child.key}/online`] = false;
+                        }
+                    });
+                    if (Object.keys(updates).length > 0) {
+                        firebase.database().ref('fans').update(updates);
+                    }
+                });
+        });
+    </script>
+</body>
+</html>
