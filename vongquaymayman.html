@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vòng quay may mắn</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            max-width: 350px;
+            margin: 0 auto;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.3);
+            }
+            to {
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.6);
+            }
+        }
+
+        .wheel-container {
+            position: relative;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .wheel {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            transition: transform 8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #2d3436, #ccf2f4);
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #ff6b6b;
+            z-index: 5;
+        }
+
+        .spin-button {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .spin-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255,107,107,0.6);
+        }
+
+        .spin-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-text {
+            font-size: 18px;
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .dots-container {
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; background-color: white; }
+            50% { opacity: 0.3; background-color: #ff6b6b; }
+        }
+
+        /* New styles for question and answers */
+        .question-container {
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-box {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .question-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .answers-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .answer-btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: none;
+            color: white;
+            padding: 12px;
+            font-size: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .answer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .answer-btn.correct {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+
+        .answer-btn.incorrect {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .correct-feedback {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .incorrect-feedback {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-container">
+            <h1 class="title">VÒNG QUAY MAY MẮN</h1>
+            <div class="wheel-container">
+                <div class="pointer"></div>
+                <img src="vongquay.png" id="wheel" class="wheel" alt="Vòng quay">
+                <div class="wheel-center">🎯</div>
+                <div class="dots-container" id="dotsContainer"></div>
+            </div>
+            <button class="spin-button" id="spinBtn">🎲 QUAY NGAY 🎲</button>
+            <div class="result">
+                <div class="result-text" id="resultText">Nhấn nút để bắt đầu quay!</div>
+            </div>
+            
+            <!-- Question and answers section -->
+            <div class="question-container" id="questionContainer">
+                <div class="question-box">
+                    <div class="question-text" id="questionText"></div>
+                    <div class="answers-container" id="answersContainer"></div>
+                </div>
+                <div class="feedback correct-feedback" id="correctFeedback">Chính xác! Bạn đã trả lời đúng!</div>
+                <div class="feedback incorrect-feedback" id="incorrectFeedback">Sai rồi! Câu trả lời đúng là: <span id="correctAnswer"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wheel = document.getElementById('wheel');
+        const spinBtn = document.getElementById('spinBtn');
+        const resultText = document.getElementById('resultText');
+        const questionContainer = document.getElementById('questionContainer');
+        const questionText = document.getElementById('questionText');
+        const answersContainer = document.getElementById('answersContainer');
+        const correctFeedback = document.getElementById('correctFeedback');
+        const incorrectFeedback = document.getElementById('incorrectFeedback');
+        const correctAnswerSpan = document.getElementById('correctAnswer');
+
+        let isSpinning = false;
+        let currentRotation = 0;
+        let currentQuestion = null;
+
+        // Questions data
+        const questions = [
+            {
+                question: "Bạn nhận được cuộc gọi nói người thân gặp nạn, cần chuyển tiền gấp. Bạn nên làm gì?",
+                answers: [
+                    { text: "Làm theo ngay để giúp người thân", correct: false },
+                    { text: "Chuyển tiền rồi mới hỏi lại người nhà", correct: false },
+                    { text: "Gọi xác minh trực tiếp với người thân hoặc người quen trước khi chuyển tiền", correct: true },
+                    { text: "Đến ngân hàng chuyển tiền liền cho an toàn", correct: false }
+                ]
+            },
+            {
+                question: "Một người lạ gửi tin nhắn trúng thưởng và yêu cầu bạn cung cấp thông tin cá nhân. Bạn nên?",
+                answers: [
+                    { text: "Cung cấp thông tin để nhận quà", correct: false },
+                    { text: "Gửi số tài khoản để nhận tiền", correct: false },
+                    { text: "Xoá tin nhắn và không cung cấp thông tin cá nhân", correct: true },
+                    { text: "Gửi thông tin qua Zalo cho tiện", correct: false }
+                ]
+            },
+            {
+                question: "Một người kết bạn trên mạng xã hội hứa gửi quà rồi yêu cầu trả phí. Bạn nên?",
+                answers: [
+                    { text: "Tin tưởng và chuyển tiền để nhận quà", correct: false },
+                    { text: "Đến sân bay để nhận trực tiếp", correct: false },
+                    { text: "Không chuyển tiền - đây là hình thức lừa đảo quen thuộc", correct: true },
+                    { text: "Nhờ người thân nhận giúp", correct: false }
+                ]
+            },
+            {
+                question: "Bạn nhận được cuộc gọi tự xưng là công an yêu cầu cung cấp tài khoản ngân hàng. Bạn nên?",
+                answers: [
+                    { text: "Làm theo vì sợ bị bắt", correct: false },
+                    { text: "Gửi tài khoản để chứng minh trong sạch", correct: false },
+                    { text: "Từ chối cung cấp và báo cho cơ quan chức năng địa phương", correct: true },
+                    { text: "Gọi tổng đài để hỏi cách làm theo", correct: false }
+                ]
+            },
+            {
+                question: "Khi mua hàng online qua Facebook, cách thanh toán an toàn hơn là gì?",
+                answers: [
+                    { text: "Chuyển khoản trước cho người bán", correct: false },
+                    { text: "Chuyển tiền để giữ hàng", correct: false },
+                    { text: "Gửi thẻ cào để thanh toán", correct: false },
+                    { text: "Thanh toán khi nhận hàng và kiểm tra đầy đủ", correct: true }
+                ]
+            }
+        ];
+
+        function spinWheel() {
+            if (isSpinning) return;
+
+            isSpinning = true;
+            spinBtn.disabled = true;
+            spinBtn.textContent = '🌀 ĐANG QUAY... 🌀';
+            resultText.textContent = 'Vòng quay đang quay...';
+            
+            // Hide previous question and feedback
+            questionContainer.style.display = 'none';
+            correctFeedback.style.display = 'none';
+            incorrectFeedback.style.display = 'none';
+
+            const minSpins = 60;
+            const maxSpins = 100;
+            const spins = Math.floor(Math.random() * (maxSpins - minSpins + 1)) + minSpins;
+            const randomAngle = Math.random() * 360;
+            const totalRotation = spins * 360 + randomAngle;
+
+            currentRotation += totalRotation;
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                spinBtn.disabled = false;
+                spinBtn.textContent = '🎲 QUAY LẠI 🎲';
+                resultText.textContent = `🎉 Chúc mừng! Bạn đã nhận được câu hỏi! 🎉`;
+                
+                // Show a random question
+                showRandomQuestion();
+            }, 8000);
+        }
+
+        function showRandomQuestion() {
+            // Get a random question
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            currentQuestion = questions[randomIndex];
+            
+            // Display the question
+            questionText.textContent = currentQuestion.question;
+            answersContainer.innerHTML = '';
+            
+            // Create answer buttons
+            currentQuestion.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.className = 'answer-btn';
+                button.textContent = answer.text;
+                button.onclick = () => checkAnswer(answer.correct, currentQuestion.answers.find(a => a.correct).text);
+                answersContainer.appendChild(button);
+            });
+            
+            // Show the question container
+            questionContainer.style.display = 'block';
+        }
+
+        function checkAnswer(isCorrect, correctAnswerText) {
+            // Disable all answer buttons
+            const buttons = document.querySelectorAll('.answer-btn');
+            buttons.forEach(button => {
+                button.disabled = true;
+                if (button.textContent === correctAnswerText) {
+                    button.classList.add('correct');
+                } else if (!isCorrect && button.textContent !== correctAnswerText) {
+                    button.classList.add('incorrect');
+                }
+            });
+            
+            // Show feedback
+            if (isCorrect) {
+                correctFeedback.style.display = 'block';
+            } else {
+                correctAnswerSpan.textContent = correctAnswerText;
+                incorrectFeedback.style.display = 'block';
+            }
+        }
+
+        spinBtn.addEventListener('click', spinWheel);
+
+        // Create decorative dots
+        const dotsContainer = document.getElementById('dotsContainer');
+        const dotCount = 24;
+        const radius = 130;
+        for (let i = 0; i < dotCount; i++) {
+            const angle = (i / dotCount) * 2 * Math.PI;
+            const x = radius * Math.cos(angle);
+            const y = radius * Math.sin(angle);
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            dot.style.left = `${130 + x - 5}px`;
+            dot.style.top = `${130 + y - 5}px`;
+            dotsContainer.appendChild(dot);
+        }
+    </script>
+</body>
+</html>
