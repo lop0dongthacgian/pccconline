@@ -88,7 +88,7 @@
             min-height: 100vh;
             background: linear-gradient(to bottom, #4a00e0, #8e2de2);
             padding: 60px 20px 20px;
-            box-sizing: border-box; /* Đảm bảo padding không làm tràn ra ngoài */
+            box-sizing: border-box;
         }
 
         .exit-btn {
@@ -119,14 +119,14 @@
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             padding: 15px;
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 15px;
         }
 
         .title {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 5px;
             color: #ffeb3b;
@@ -134,9 +134,45 @@
         }
 
         .subtitle {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             opacity: 0.9;
         }
+
+        /* === STATS STYLES === */
+        .stats-container {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .stat-box {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 10px;
+            flex: none;
+            width: 23%;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-title {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .online-value { color: #4CAF50; }
+        .offline-value { color: #f44336; }
 
         /* === TABLE STYLES === */
         .players-table {
@@ -151,65 +187,32 @@
         .players-table thead th {
             background-color: #5a189a;
             color: white;
-            padding: 15px 20px;
+            padding: 12px 15px;
             text-align: left;
             font-weight: 600;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
         .players-table tbody td {
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
         .table-container {
-            max-height: 65vh;
+            max-height: 70vh;
             overflow-y: auto;
-            margin-top: 15px;
+            margin-top: 10px;
             border-radius: 12px;
-            position: relative; /* Để chứa nút fullscreen */
+            position: relative;
         }
-
-        /* === STATS STYLES === */
-        .stats-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            gap: 15px;
-        }
-
-        .stat-box {
-            background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 15px;
-            flex: 1;
-            min-width: 200px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .stat-title {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: white;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-
-        .online-value { color: #4CAF50; }
-        .offline-value { color: #f44336; }
 
         /* === CLOCK STYLES === */
         .clock {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             margin-top: 10px;
             font-family: monospace;
             background-color: rgba(0, 0, 0, 0.3);
@@ -220,10 +223,10 @@
 
         /* === RANKING STYLES === */
         .ranking-title {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: bold;
             text-align: center;
-            margin: 15px 0;
+            margin: 10px 0;
             color: white;
         }
 
@@ -241,8 +244,8 @@
             display: none;
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
+            padding: 15px;
+            margin: 15px 0;
             text-align: center;
             animation: fadeIn 0.5s ease-in-out;
         }
@@ -253,21 +256,21 @@
         }
 
         .winner-title {
-            font-size: 2.5rem;
+            font-size: 2rem;
             color: #ffeb3b;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .winner-name {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .winner-score {
-            font-size: 1.8rem;
-            margin-bottom: 15px;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
         }
 
         .hidden {
@@ -291,8 +294,8 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(to bottom, #4a00e0, #8e2de2); /* Giữ màu nền */
-            z-index: 99; /* Cao hơn các thành phần khác nhưng thấp hơn waiting-screen và exit-btn */
+            background: linear-gradient(to bottom, #4a00e0, #8e2de2);
+            z-index: 99;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -302,24 +305,24 @@
         }
 
         .fullscreen-table-container .players-table {
-            width: 95%; /* Chiếm gần hết chiều rộng */
-            height: 90%; /* Chiếm gần hết chiều cao */
-            font-size: 1.5em; /* Phóng to chữ trong bảng */
+            width: 95%;
+            height: 90%;
+            font-size: 1.5em;
         }
 
         .fullscreen-table-container .players-table thead th {
-            font-size: 1.8rem; /* Phóng to tiêu đề cột */
+            font-size: 1.8rem;
             padding: 20px 25px;
         }
 
         .fullscreen-table-container .players-table tbody td {
-            font-size: 1.6rem; /* Phóng to nội dung ô */
+            font-size: 1.6rem;
             padding: 15px 25px;
         }
 
         .fullscreen-table-container .table-container {
-            max-height: unset; /* Bỏ giới hạn chiều cao cũ */
-            overflow-y: auto; /* Cho phép cuộn nếu cần */
+            max-height: unset;
+            overflow-y: auto;
             width: 100%;
             height: 100%;
         }
@@ -327,8 +330,8 @@
         /* Nút fullscreen */
         .fullscreen-btn {
             position: absolute;
-            top: 10px; /* Đặt nút ở trên cùng */
-            right: 10px;  /* Đặt nút ở phải */
+            top: 10px;
+            right: 10px;
             background-color: rgba(0, 0, 0, 0.4);
             color: white;
             border: none;
@@ -336,7 +339,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
-            z-index: 20; /* Đảm bảo nút nằm trên bảng */
+            z-index: 20;
             transition: background-color 0.3s ease;
         }
 
@@ -344,7 +347,7 @@
             background-color: rgba(0, 0, 0, 0.6);
         }
 
-        /* Khi ở chế độ toàn màn hình, nút phóng to/thu nhỏ sẽ di chuyển lên góc trên bên phải */
+        /* Khi ở chế độ toàn màn hình */
         .fullscreen-table-container .fullscreen-btn {
             top: 20px;
             right: 20px;
@@ -352,7 +355,6 @@
             padding: 10px 15px;
         }
 
-        /* Ẩn các thành phần khác khi bảng ở chế độ toàn màn hình */
         .fullscreen-active .header-container,
         .fullscreen-active .winner-container,
         .fullscreen-active .stats-container,
@@ -361,30 +363,93 @@
         }
 
         .fullscreen-active #main-content {
-            padding: 0; /* Bỏ padding khi toàn màn hình */
+            padding: 0;
         }
 
         .fullscreen-active .exit-btn {
-            z-index: 101; /* Đảm bảo nút thoát nằm trên mọi thứ */
+            z-index: 101;
         }
 
         /* Dot trạng thái */
         .online-dot {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background-color: #4CAF50;
-            margin-right: 8px;
+            margin-right: 6px;
         }
 
         .offline-dot {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background-color: #f44336;
-            margin-right: 8px;
+            margin-right: 6px;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .waiting-text {
+                font-size: 2rem;
+            }
+            
+            .waiting-subtext {
+                font-size: 1.2rem;
+            }
+            
+            .start-btn {
+                font-size: 1.2rem;
+                padding: 12px 30px;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .stat-box {
+                min-width: 100px;
+                width: 22%;
+            }
+            
+            .stat-title {
+                font-size: 0.9rem;
+            }
+            
+            .stat-value {
+                font-size: 1.2rem;
+            }
+            
+            .ranking-title {
+                font-size: 1.3rem;
+            }
+            
+            .players-table thead th {
+                font-size: 1rem;
+                padding: 10px 12px;
+            }
+            
+            .players-table tbody td {
+                font-size: 0.9rem;
+                padding: 8px 10px;
+            }
+            
+            .winner-title {
+                font-size: 1.5rem;
+            }
+            
+            .winner-name {
+                font-size: 1.3rem;
+            }
+            
+            .winner-score {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
@@ -508,6 +573,11 @@
 
             // Sự kiện nút phóng to/thu nhỏ
             document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+            
+            // Đảm bảo bảng có đủ không gian
+            const tableContainer = document.getElementById('players-table-container');
+            tableContainer.style.minHeight = '400px';
+            tableContainer.style.overflowY = 'auto';
         });
 
         // ===== CÁC HÀM CHÍNH =====
@@ -627,25 +697,30 @@
 
                 console.log(`Nhận dữ liệu từ ${Object.keys(players).length} người chơi`);
 
+                // Xóa dòng loading nếu có
+                playersBody.innerHTML = '';
+
                 // Sắp xếp người chơi theo điểm số
                 const sortedPlayers = Object.entries(players)
                     .map(([id, data]) => ({ id, ...data }))
                     .sort((a, b) => {
                         const scoreA = a.gameData?.score || 0;
                         const scoreB = b.gameData?.score || 0;
-
-                        // Sắp xếp giảm dần theo điểm
-                        if (scoreA !== scoreB) {
-                            return scoreB - scoreA;
-                        }
-                        // Nếu điểm bằng nhau, sắp xếp tăng dần theo thời gian hoàn thành
-                        const timeA = a.gameData?.completionTime !== undefined && a.gameData?.completionTime !== null ? a.gameData.completionTime : Infinity;
-                        const timeB = b.gameData?.completionTime !== undefined && b.gameData?.completionTime !== null ? b.gameData.completionTime : Infinity;
+                        if (scoreA !== scoreB) return scoreB - scoreA;
+                        const timeA = a.gameData?.completionTime ?? Infinity;
+                        const timeB = b.gameData?.completionTime ?? Infinity;
                         return timeA - timeB;
                     });
 
-                // Cập nhật bảng
-                playersBody.innerHTML = '';
+                // Điều chỉnh kích thước bảng dựa trên số lượng người chơi
+                const tableContainer = document.getElementById('players-table-container');
+                if (sortedPlayers.length > 5) {
+                    tableContainer.style.maxHeight = '70vh';
+                    tableContainer.style.overflowY = 'auto';
+                } else {
+                    tableContainer.style.maxHeight = 'none';
+                    tableContainer.style.overflowY = 'visible';
+                }
 
                 if (sortedPlayers.length === 0) {
                     playersBody.innerHTML = `
@@ -725,11 +800,9 @@
                             .sort((a, b) => {
                                 const scoreA = a.gameData?.score || 0;
                                 const scoreB = b.gameData?.score || 0;
-                                if (scoreA !== scoreB) {
-                                    return scoreB - scoreA;
-                                }
-                                const timeA = a.gameData?.completionTime !== undefined && a.gameData?.completionTime !== null ? a.gameData.completionTime : Infinity;
-                                const timeB = b.gameData?.completionTime !== undefined && b.gameData?.completionTime !== null ? b.gameData.completionTime : Infinity;
+                                if (scoreA !== scoreB) return scoreB - scoreA;
+                                const timeA = a.gameData?.completionTime ?? Infinity;
+                                const timeB = b.gameData?.completionTime ?? Infinity;
                                 return timeA - timeB;
                             });
 
@@ -791,13 +864,13 @@
                 // Chuyển sang chế độ toàn màn hình
                 tableContainer.classList.add('fullscreen-table-container');
                 mainContent.classList.add('fullscreen-active');
-                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>'; // Đổi icon thu nhỏ
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
                 fullscreenBtn.title = 'Thu nhỏ';
             } else {
                 // Thoát chế độ toàn màn hình
                 tableContainer.classList.remove('fullscreen-table-container');
                 mainContent.classList.remove('fullscreen-active');
-                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>'; // Đổi icon phóng to
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
                 fullscreenBtn.title = 'Phóng to';
             }
             isFullscreen = !isFullscreen;
